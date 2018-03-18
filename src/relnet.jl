@@ -52,7 +52,6 @@ function main()
     end
     qtrn,bstrn,ytrn,smtrn,iixtrn,infotrn = data(opts,"train")
     qdev,bsdev,ydev,smdev,iixdev,infodev  = data(opts,"val")
-    #qtst,bstst,ytst,smtst,iixtst,infotst  = data(opts,"test")
     if isfile(opts[:bestmodel])
         # To continue training from the model given by opts[:bestmodel]
         info(" loading model and continue training...")
@@ -86,13 +85,6 @@ function main()
     dev_pair_indices = vcat([ map(x->(i-1)*dev_max_objnum+x,inds) for i=1:opts[:batchsize]]...)
     dev_onesarr = opts[:atype](ones(Float32,1,dev_max_objnum * dev_max_objnum))
 
-    #=
-    tst_max_objnum = div(size(smtst,1),opts[:objlen])
-    t1 = hcat(vec(transpose(repmat(1:tst_max_objnum,1,tst_max_objnum))),repmat(1:tst_max_objnum,tst_max_objnum,1))
-    inds =  vec(transpose(t1))
-    tst_pair_indices = vcat([ map(x->(i-1)*tst_max_objnum+x,inds) for i=1:opts[:batchsize]]...)
-    tst_onesarr = opts[:atype](ones(Float32,1,tst_max_objnum * tst_max_objnum))
-    =#
     besties  = zeros(2)
     patiance = zeros(1)
     patiance[1] = opts[:patiance]
@@ -104,10 +96,6 @@ function main()
         if devacc > besties[1]
             besties[1] = devacc
             info("best dev accuracy: ",besties[1])
-            #tstlss,tstacc = accuracy(weights,rsettings,tst_onesarr,tst_pair_indices,qtst,bstst,ytst,smtst,iixtst,opts)
-            #info(@sprintf "[tst-%d] lss:%.4f acc:%.4f" i tstlss[1]/tstlss[2] tstacc)
-            #devlss,devacc = accuracy(weights,rsettings,dev_onesarr,dev_pair_indices,qdev,bsdev,ydev,smdev,iixdev,opts)
-            #info(@sprintf "[dev-%d] lss:%.4f acc:%.4f" i devlss[1]/devlss[2] devacc)
             JLD.save(opts[:bestmodel],"weights",weights,"rsettings",
                      rsettings,"params",params,"bestacc",besties[1],
                      "startfrom",i,"lr",opts[:lr])
@@ -119,7 +107,7 @@ function main()
                 break
             end
             if patiance[1] == div(opts[:patiance],2)
-                opts[:lr] = max(0.1,opts[:lr]*opts[:decayrate])
+                opts[:lr] = opts[:lr]*opts[:decayrate]
                 params = oparams(weights,optimtype;lr=opts[:lr],gclip=opts[:gclip])
                 info(@sprintf "learning rate has been set to: %.4f" opts[:lr])
             end

@@ -66,6 +66,14 @@ def build_vocab_question(data, params):
         d['final_question'] = question
     return data, vocab
 
+def build_answer_vocab(d,params):
+    counts = {}
+    for inst in d:
+        ans = inst['answer']
+        counts[ans] = counts.get(ans,0)+1
+    vocab = [w for w,n in counts.iteritems()]
+    return vocab
+
 def apply_vocab_question(imgs, wtoi):
     # apply the vocab on test.
     for img in imgs:
@@ -97,6 +105,9 @@ def main(params):
     data_tst = apply_vocab_question(data_tst, wtoi)
     data_dev = apply_vocab_question(data_dev, wtoi)
     #pdb.set_trace()
+    avocab = build_answer_vocab(data_trn,params)
+    atoi = {w:i+1 for i,w in enumerate(avocab)}
+
     trn_processed = os.path.join(params['outputdir'],'train_processed.json')
     with open(trn_processed,'w') as outfile:
         json.dump(data_trn,outfile)
@@ -112,6 +123,10 @@ def main(params):
     vocabularyp = os.path.join(params['outputdir'],'vocabulary.json')
     with open(vocabularyp,'w') as outfile:
         json.dump(vocabs,outfile)
+
+    vocabularya= os.path.join(params['outputdir'],'answer_vocabulary.json')
+    with open(vocabularya,'w') as outfile:
+        json.dump(atoi,outfile)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
